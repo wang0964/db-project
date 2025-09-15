@@ -1,25 +1,37 @@
-# Flask + MongoDB 简易电商（无 Schema 校验）
+# Flask + MongoDB Mini E-commerce (No Schema Validation)
 
-## 功能
-- 用户注册/登录/登出（无密码版演示）
-- 商品 CRUD（后台，管理员可见）
-- 购物车、下单
-- 类别：任意层级添加（树结构同步 & 邻接表）
-- 按类别（含子孙）检索商品
+## Features
+- User registration / login / logout (password-less demo)
+- Product CRUD (admin-only)
+- Cart & checkout
+- Categories: add at any depth (keeps both a nested tree and an adjacency list)
+- Browse products by category (includes all descendants)
 
-## 运行
+## Setup & Run
+
 ```bash
+# 1) Create and activate a Conda env (Python 3.13)
+conda create -n db-project python=3.13
+conda activate db-project
+
+# 2) Install dependencies
 pip install flask flask-login pymongo python-dotenv
-# 可选：连接串
-# echo "MONGODB_URI=mongodb://localhost:27017" > .env
+
+# 3) Install MongodbMongoDB Community version
+
+# 4) Start the app
 python flask_ecommerce_novalidate.py
 ```
 
-- 打开 http://127.0.0.1:5000/
-- 注册一个账号后，访问 http://127.0.0.1:5000/dev/make_admin/<你的邮箱> 将其设为管理员
-- 导航进入「后台管理」与「类别管理/检索」
+- Open http://127.0.0.1:5000/
+- Register an account, then visit:
+  ```
+  http://127.0.0.1:5000/dev/make_admin/<your_email>
+  ```
+  to promote it to admin.
+- Use the navigation to access **Admin (Products)** and **Categories (Manage/Search)**.
 
-## 说明
-- 无任何 Schema 校验；金额以 float 存储，仅为演示。
-- `categories` 为邻接表（便于查询），`categories_tree` 为嵌套树（演示 `$push`/`arrayFilters`）。
-- 商品的 `categoryId` 指向 `categories._id`，检索时使用 `$graphLookup` 获取子树所有节点。
+## Notes
+- There is **no schema validation**; prices are stored as `float` (demo only).
+- `categories` is the **adjacency list** (good for queries); `categories_tree` is the **nested tree** (good for demonstrating `$push` / `arrayFilters`).
+- Products store multiple categories in `products.categoryIds` (array of ObjectIds). When filtering by a category, the app uses `$graphLookup` to include all nodes in that category’s subtree.
