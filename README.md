@@ -1,4 +1,4 @@
-# Flask + MongoDB Mini E-commerce (No Schema Validation)
+# Flask + MongoDB Mini E-commerce
 
 ## Features
 - User registration / login / logout (password-less demo)
@@ -31,7 +31,3 @@ python flask_ecommerce_novalidate.py
   to promote it to admin.
 - Use the navigation to access **Admin (Products)** and **Categories (Manage/Search)**.
 
-## Notes
-- There is **no schema validation**; prices are stored as `float` (demo only).
-- `categories` is the **adjacency list** (good for queries); `categories_tree` is the **nested tree** (good for demonstrating `$push` / `arrayFilters`).
-- Products store multiple categories in `products.categoryIds` (array of ObjectIds). When filtering by a category, the app uses `$graphLookup` to include all nodes in that category’s subtree.
