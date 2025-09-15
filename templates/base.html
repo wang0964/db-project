@@ -15,7 +15,7 @@
       <a href="{{ url_for('cart') }}">购物车</a>
       <a href="{{ url_for('checkout') }}">结算</a>
       {% if current_user.isAdmin %}
-        <a href="{{ url_for('admin_products') }}">后台管理</a>
+        <a href="{{ url_for('admin_products') }}">后台管理</a> <a href="{{ url_for('admin_categories') }}">类别管理</a>
       {% endif %}
       <a href="{{ url_for('logout') }}">退出 ({{ current_user.name }})</a>
     {% else %}

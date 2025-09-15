@@ -42,6 +42,10 @@ def admin_required(f):
         return f(*args, **kwargs)
     return wrapper
 
+
+def slugify(name: str) -> str:
+    return "".join(ch.lower() if ch.isalnum() else "-" for ch in name).strip("-")
+
 # ======== 首页 ========
 @app.route("/")
 def index():
@@ -137,7 +141,8 @@ def checkout():
             "status": "created",
             "items": items,
             "amount": {"total": float(round(total, 2))},
-            "createdAt": datetime.utcnow()
+            "createdAt": datetime.utcnow(),
+            "typeIds": type_ids
         }).inserted_id
         db.carts.update_one({"userId": ObjectId(current_user.id)}, {"$set": {"items": []}})
         return render_template("checkout.html", order=str(order_id), total=float(round(total, 2)))
@@ -159,20 +164,34 @@ def admin_add_product():
         title = request.form["title"].strip()
         price = float(request.form["price"])
         sku = request.form["sku"].strip()
-        cat_id = request.form.get("categoryId")
-        category_id = ObjectId(cat_id) if cat_id else None
+        # 多类别：checkbox name=categoryIds
+        category_ids = []
+        for cid in request.form.getlist("categoryIds"):
+            try:
+                category_ids.append(ObjectId(cid))
+            except Exception:
+                pass
+        # 多类型标签：checkbox name=typeIds
+        type_ids = []
+        for tid in request.form.getlist("typeIds"):
+            try:
+                type_ids.append(ObjectId(tid))
+            except Exception:
+                pass
         db.products.insert_one({
             "title": title,
             "price": float(price),
             "status": "active",
             "variants": [{"sku": sku, "attrs": {}, "price": float(price)}],
-            "categoryId": category_id,
-            "createdAt": datetime.utcnow()
+            "categoryIds": category_ids,
+            "createdAt": datetime.utcnow(),
+            "typeIds": type_ids
         })
         flash("商品已添加", "success")
         return redirect(url_for("admin_products"))
     categories = list(db.categories.find({}))
-    return render_template("admin_add_product.html", categories=categories)
+    types = list(db.types.find({}))
+    return render_template("admin_add_product.html", categories=categories, types=types)
 
 @app.route("/admin/products/edit/<product_id>", methods=["GET", "POST"])
 @login_required
@@ -188,19 +207,27 @@ def admin_edit_product(product_id):
         sku = request.form["sku"].strip()
         cat_id = request.form.get("categoryId")
         category_id = ObjectId(cat_id) if cat_id else None
+        type_ids = []
+        for tid in request.form.getlist("typeIds"):
+            try:
+                type_ids.append(ObjectId(tid))
+            except Exception:
+                pass
         db.products.update_one(
             {"_id": ObjectId(product_id)},
             {"$set": {
                 "title": title,
                 "price": float(price),
                 "variants": [{"sku": sku, "attrs": {}, "price": float(price)}],
-                "categoryId": category_id
+                "categoryIds": category_ids,
+                "typeIds": type_ids
             }}
         )
         flash("商品已更新", "success")
         return redirect(url_for("admin_products"))
     categories = list(db.categories.find({}))
-    return render_template("admin_edit_product.html", product=product, categories=categories)
+    types = list(db.types.find({}))
+    return render_template("admin_edit_product.html", product=product, categories=categories, types=types)
 
 @app.route("/admin/products/delete/<product_id>")
 @login_required
@@ -209,6 +236,88 @@ def admin_delete_product(product_id):
     db.products.delete_one({"_id": ObjectId(product_id)})
     flash("商品已删除", "info")
     return redirect(url_for("admin_products"))
+
+
+# ======== 后台：类型（多标签）CRUD ========
+@app.route("/admin/types")
+@login_required
+@admin_required
+def admin_types():
+    types = list(db.types.find())
+    return render_template("admin_types.html", types=types)
+
+@app.route("/admin/types/add", methods=["GET", "POST"])
+@login_required
+@admin_required
+def admin_add_type():
+    if request.method == "POST":
+        name = request.form["name"].strip()
+        slug = slugify(name)
+        db.types.insert_one({"name": name, "slug": slug, "createdAt": datetime.utcnow()})
+        flash("类型已添加", "success")
+        return redirect(url_for("admin_types"))
+    return render_template("admin_add_type.html")
+
+@app.route("/admin/types/edit/<type_id>", methods=["GET", "POST"])
+@login_required
+@admin_required
+def admin_edit_type(type_id):
+    t = db.types.find_one({"_id": ObjectId(type_id)})
+    if not t:
+        flash("类型不存在", "error")
+        return redirect(url_for("admin_types"))
+    if request.method == "POST":
+        name = request.form["name"].strip()
+        slug = slugify(name)
+        db.types.update_one({"_id": ObjectId(type_id)}, {"$set": {"name": name, "slug": slug}})
+        flash("类型已更新", "success")
+        return redirect(url_for("admin_types"))
+    return render_template("admin_edit_type.html", t=t)
+
+@app.route("/admin/types/delete/<type_id>")
+@login_required
+@admin_required
+def admin_delete_type(type_id):
+    db.types.delete_one({"_id": ObjectId(type_id)})
+    # 同步移除产品里的引用（可选）
+    db.products.update_many({}, {"$pull": {"typeIds": ObjectId(type_id)}})
+    flash("类型已删除", "info")
+    return redirect(url_for("admin_types"))
+
+
+def rebuild_categories_tree():
+    """
+    依据邻接表 categories 重新构建 categories_tree（整棵树重建，简单可靠）。
+    - 对每个根(parentId=None)创建一棵树文档
+    - 递归填充 subcategories
+    """
+    db.categories_tree.delete_many({})
+    nodes = list(db.categories.find({}))
+    by_parent = {}
+    by_id = {}
+    for n in nodes:
+        by_id[n["_id"]] = n
+        by_parent.setdefault(n.get("parentId"), []).append(n)
+
+    def build_children(parent_id):
+        children = []
+        for n in by_parent.get(parent_id, []):
+            children.append({
+                "_id": n["_id"],
+                "name": n.get("name"),
+                "subcategories": build_children(n["_id"])
+            })
+        return children
+
+    for root in by_parent.get(None, []):
+        tree_doc = {
+            "_id": root["_id"],
+            "name": root.get("name"),
+            "subcategories": build_children(root["_id"]),
+            "createdAt": datetime.utcnow()
+        }
+        db.categories_tree.insert_one(tree_doc)
+    return True
 
 # ======== 类别：任意层插入 + 检索 ========
 def _build_tree_push_update(path_ids, new_node):
@@ -226,6 +335,148 @@ def _build_tree_push_update(path_ids, new_node):
     update_path = ".".join(parts)
     af = [{f"lvl{i}._id": path_ids[i]} for i in range(len(path_ids))]
     return {"$push": {update_path: new_node}}, af, update_path
+
+
+
+
+# ======== 后台：类别管理（编辑/列表入口） ========
+@app.route("/admin/categories")
+@login_required
+@admin_required
+def admin_categories():
+    nodes = list(db.categories.find({}))
+    # id -> name 映射，只取直接父名称
+    id2name = {str(n["_id"]): n.get("name") for n in nodes}
+    for n in nodes:
+        if n.get("parentId"):
+            n["parentName"] = id2name.get(str(n["parentId"]), "(未知)")
+        else:
+            n["parentName"] = "根"
+    return render_template("admin_categories.html", nodes=nodes)
+
+
+@app.route("/categories/edit/<cat_id>", methods=["GET", "POST"])
+@login_required
+@admin_required
+def categories_edit(cat_id):
+    cat = db.categories.find_one({"_id": ObjectId(cat_id)})
+    if not cat:
+        flash("类别不存在", "error")
+        return redirect(url_for("admin_categories"))
+    if request.method == "POST":
+        new_name = request.form["name"].strip()
+        # 1) 更新该节点
+        db.categories.update_one({"_id": cat["_id"]}, {"$set": {"name": new_name}})
+
+        # 2) 计算新路径前缀
+        if cat.get("parentId"):
+            parent = db.categories.find_one({"_id": cat["parentId"]})
+            parent_path = parent.get("path") or parent["name"]
+            new_prefix = parent_path + ">" + new_name
+        else:
+            new_prefix = new_name
+
+        old_prefix = cat.get("path", cat["name"])
+
+        # 3) 更新该节点 path
+        db.categories.update_one({"_id": cat["_id"]}, {"$set": {"path": new_prefix}})
+
+        # 4) 找到所有后代并逐个修正 path
+        pipeline = [
+            {"$match": {"_id": cat["_id"]}},
+            {"$graphLookup": {
+                "from": "categories",
+                "startWith": "$_id",
+                "connectFromField": "_id",
+                "connectToField": "parentId",
+                "as": "desc"
+            }},
+            {"$project": {"desc": 1}}
+        ]
+        res = list(db.categories.aggregate(pipeline))
+        if res:
+            for d in res[0]["desc"]:
+                d_old = d.get("path", d["name"])
+                if d_old.startswith(old_prefix):
+                    d_new = new_prefix + d_old[len(old_prefix):]
+                    db.categories.update_one({"_id": d["_id"]}, {"$set": {"path": d_new}})
+
+        # 5) 同步树文档里的名字
+        # 定位根与链路
+        if cat.get("parentId"):
+            # 取根 id
+            root_id = (cat.get("pathIds") or [cat["_id"]])[0]
+            # 构造链（从第一层到目标）：取 cat.pathIds 去掉首个根，再加上自己
+            chain_under_root = (cat.get("pathIds", [])[1:] if cat.get("pathIds") else []) + [cat["_id"]]
+        else:
+            root_id = cat["_id"]
+            chain_under_root = []  # 目标就是根文档
+
+        if not db.categories_tree.find_one({"_id": root_id}):
+            # 安全兜底：若无树根，重建一个
+            root_doc = db.categories.find_one({"_id": root_id})
+            db.categories_tree.insert_one({"_id": root_doc["_id"], "name": root_doc["name"], "subcategories": [], "createdAt": datetime.utcnow()})
+
+        if len(chain_under_root) == 0:
+            # 目标是根：直接更新根 name
+            db.categories_tree.update_one({"_id": root_id}, {"$set": {"name": new_name}})
+        else:
+            # 构造路径和 arrayFilters，命中目标 .name
+            parts, af = [], []
+            for i, cid in enumerate(chain_under_root):
+                parts += ["subcategories", f"$[lvl{i}]"]
+                af.append({f"lvl{i}._id": cid})
+            target_path = ".".join(parts + ["name"])
+            db.categories_tree.update_one({"_id": root_id}, {"$set": {target_path: new_name}}, array_filters=af)
+
+        flash("类别已更新", "success")
+        return redirect(url_for("admin_categories"))
+
+    # GET
+    return render_template("categories_edit.html", cat=cat)
+
+
+@app.route("/categories/delete/<cat_id>")
+@login_required
+@admin_required
+def categories_delete(cat_id):
+    try:
+        start_id = ObjectId(cat_id)
+    except Exception:
+        flash("类别ID不合法", "error")
+        return redirect(url_for("admin_categories"))
+
+    # 获取子树全部 id（含自身）
+    pipeline = [
+        {"$match": {"_id": start_id}},
+        {"$graphLookup": {
+            "from": "categories",
+            "startWith": "$_id",
+            "connectFromField": "_id",
+            "connectToField": "parentId",
+            "as": "descendants"
+        }},
+        {"$project": {
+            "allIds": {"$concatArrays": [["$_id"], {"$map": {"input": "$descendants", "as": "d", "in": "$$d._id"}}]}
+        }}
+    ]
+    res = list(db.categories.aggregate(pipeline))
+    if not res:
+        flash("未找到该类别", "error")
+        return redirect(url_for("admin_categories"))
+    all_ids = res[0]["allIds"]
+
+    # 1) 从邻接表删除整棵子树
+    db.categories.delete_many({"_id": {"$in": all_ids}})
+
+    # 2) 同步移除所有商品中的引用
+    db.products.update_many({}, {"$pull": {"categoryIds": {"$in": all_ids}}})
+
+    # 3) 重建 categories_tree
+    rebuild_categories_tree()
+
+    flash("类别及其子类已删除，商品引用已移除", "info")
+    return redirect(url_for("admin_categories"))
 
 @app.route("/categories", methods=["GET"])
 def categories_home():
@@ -305,7 +556,7 @@ def products_by_category(cat_id):
         flash("未找到该类别", "error")
         return redirect(url_for("index"))
     all_ids = res[0]["allIds"]
-    products = list(db.products.find({"categoryId": {"$in": all_ids}}))
+    products = list(db.products.find({"categoryIds": {"$in": all_ids}}))
     return render_template("products_by_category.html", products=products, count=len(products))
 
 # ======== 种子数据（可选）========
@@ -318,6 +569,12 @@ def seed_if_empty():
             {"title": "Laptop Pro", "price": 1299.0, "status": "active",
              "variants": [{"sku": "LP-16-512", "attrs": {"ram": "16G", "ssd": "512G"}, "price": 1299.0}],
              "createdAt": datetime.utcnow()},
+        ])
+    if db.types.count_documents({}) == 0:
+        db.types.insert_many([
+            {"name": "NewArrival", "slug": "newarrival", "createdAt": datetime.utcnow()},
+            {"name": "Hot", "slug": "hot", "createdAt": datetime.utcnow()},
+            {"name": "OnSale", "slug": "onsale", "createdAt": datetime.utcnow()},
         ])
     if db.categories.count_documents({}) == 0:
         root_id = db.categories.insert_one({"name": "Electronics", "parentId": None, "pathIds": [], "path": "Electronics", "createdAt": datetime.utcnow()}).inserted_id

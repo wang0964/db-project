@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>后台 - 类别管理</h2>
+<p><a href="{{ url_for('categories_home') }}">➕ 新增类别（树页面）</a></p>
+<table border="1" cellpadding="6" cellspacing="0">
+  <tr><th>路径</th><th>父名称</th><th>操作</th></tr>
+  {% for n in nodes %}
+  <tr>
+    <td>{{ n.path or n.name }}</td>
+    <td>{{ n.parentName }}</td>
+    <td><a href="{{ url_for('categories_edit', cat_id=n._id) }}">编辑</a> | <a href="{{ url_for('categories_delete', cat_id=n._id) }}" onclick="return confirm('确定删除该类别及其所有子类？商品中的引用也将移除。');">删除</a></td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}
