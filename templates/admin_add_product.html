@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>新增商品</h2>
+<form method="post">
+  标题: <input type="text" name="title" required><br>
+  价格: <input type="number" step="0.01" name="price" required><br>
+  SKU: <input type="text" name="sku" required><br>
+  类别:
+  <select name="categoryId">
+    <option value="">(未指定)</option>
+    {% for c in categories %}
+      <option value="{{ c._id }}">{{ c.path or c.name }}</option>
+    {% endfor %}
+  </select><br>
+  <button type="submit">提交</button>
+</form>
+{% endblock %}

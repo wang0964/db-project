@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>后台 - 商品管理</h2>
+<p><a href="{{ url_for('admin_add_product') }}">➕ 新增商品</a></p>
+<ul>
+  {% for p in products %}
+  <li>
+    {{ p.title }} - ￥{{ "%.2f"|format(p.price or 0) }}
+    <a href="{{ url_for('admin_edit_product', product_id=p._id) }}">✏ 编辑</a>
+    <a href="{{ url_for('admin_delete_product', product_id=p._id) }}" onclick="return confirm('确定删除吗?')">❌ 删除</a>
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

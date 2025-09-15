@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>购物车</h2>
+{% set items = cart.get('items', []) %}
+{% if items|length > 0 %}
+<ul>
+  {% for it in items %}
+    <li>{{ it['sku'] }} - 数量: {{ it['qty'] }} - 单价: ￥{{ "%.2f"|format((it['priceSnapshot'] or 0)|float) }}</li>
+  {% endfor %}
+</ul>
+<a href="{{ url_for('checkout') }}">去结算</a>
+{% else %}
+<p>购物车为空</p>
+{% endif %}
+{% endblock %}

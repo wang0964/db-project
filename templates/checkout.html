@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>结算</h2>
+{% if error %}
+<p style="color:red;">{{ error }}</p>
+{% elif order %}
+<p>下单成功！订单号: {{ order }} 总金额: ￥{{ "%.2f"|format(total) }}</p>
+{% else %}
+<form method="post"><button type="submit">确认下单</button></form>
+{% endif %}
+{% endblock %}

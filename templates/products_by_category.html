@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>按类别检索的商品（{{ count }}）</h2>
+<ul>
+  {% for p in products %}
+    <li>{{ p.title }} - ￥{{ "%.2f"|format(p.price or 0) }}</li>
+  {% endfor %}
+</ul>
+{% endblock %}

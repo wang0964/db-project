@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>类别管理 / 检索</h2>
+
+<h3>新增类别</h3>
+<form method="post" action="{{ url_for('categories_add') }}">
+  名称：<input type="text" name="name" required>
+  父类别：
+  <select name="parentId">
+    <option value="">-- 作为根 --</option>
+    {% for n in nodes %}
+      <option value="{{ n._id }}">{{ n.path or n.name }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit">添加</button>
+</form>
+
+<hr>
+<h3>现有树（categories_tree）</h3>
+{% if trees|length == 0 %}
+<p>暂无根类目。</p>
+{% endif %}
+<ul>
+  {% macro render_nodes(nodes) -%}
+    <ul>
+      {% for x in nodes %}
+        <li>
+          {{ x.name }}
+          {% if x.subcategories and x.subcategories|length > 0 %}
+            {{ render_nodes(x.subcategories) }}
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {%- endmacro %}
+  {% for root in trees %}
+    <li>
+      <strong>{{ root.name }}</strong>
+      {% if root.subcategories %}
+        {{ render_nodes(root.subcategories) }}
+      {% endif %}
+    </li>
+  {% endfor %}
+</ul>
+
+<hr>
+<h3>所有类别（邻接表）</h3>
+<ul>
+{% for n in nodes %}
+  <li>
+    {{ n.path or n.name }}
+    — <a href="{{ url_for('products_by_category', cat_id=n._id) }}">查看该类目及子类商品</a>
+  </li>
+{% endfor %}
+</ul>
+{% endblock %}
