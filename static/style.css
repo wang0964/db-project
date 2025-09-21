@@ -1,7 +1,10 @@
-body{font-family:Arial,Helvetica,sans-serif;margin:20px;}
-nav a{margin-right:10px;}
-.flashlist{list-style:circle;margin:10px 0;padding-left:20px;}
-.flash.error{color:#c0392b}.flash.success{color:#27ae60}.flash.info{color:#2c3e50}
-ul{line-height:1.8}
-img{border-radius:4px}
-button{cursor:pointer}
+body{font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:16px;color:#222}
+h1{margin:0 0 8px 0}
+nav a{margin-right:16px}
+.flash{list-style:none;padding:0}
+.flash li{padding:6px 10px;margin:6px 0;border-radius:6px}
+.flash li.success{background:#e8f6ee;color:#0b7a40;border:1px solid #bfe5cd}
+.flash li.error{background:#fdecea;color:#a12622;border:1px solid #f5c2c7}
+.viewer{position:relative}
+.viewer .prev,.viewer .next{position:absolute;top:50%;transform:translateY(-50%);border:none;border-radius:8px;background:#666;color:#fff;padding:8px 10px;opacity:.9;cursor:pointer}
+.viewer .prev{left:6px}.viewer .next{right:6px}

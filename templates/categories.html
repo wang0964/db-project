@@ -1,42 +1,30 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>Search by Category</h2>
-
-<form method="get" action="{{ url_for('categories_home') }}" style="margin-bottom:12px;">
-  Keyword (fuzzy match name or path):
-  <input type="text" name="q" value="{{ q or '' }}" placeholder="e.g.: Food, Phone, Sea">
+<form method="get">
+  Keyword: <input type="text" name="q" value="{{ q or '' }}" placeholder="title or sku">
   <button type="submit">Search</button>
-</form>
-
-<form method="get" action="{{ url_for('categories_home') }}" style="margin-bottom:16px;">
-  <div style="max-height:220px;overflow:auto;border:1px solid #ddd;padding:8px;">
-    {% for n in nodes %}
-      <label style="display:inline-block;min-width:260px;margin:3px 10px 3px 0;">
-        <input type="checkbox" name="categoryIds" value="{{ n._id }}"
-               {% if checked_set and (str(n._id) in checked_set) %}checked{% endif %}>
-        {{ n.path or n.name }}
-      </label>
-    {% endfor %}
+  <div style="margin-top:8px;">
+  {% for c in categories %}
+    <label style="display:inline-block;min-width:240px;">
+      <input type="checkbox" name="cat" value="{{ c._id }}" {% if c._id|string in selected %}checked{% endif %}>
+      {{ c.path }}
+    </label>
+  {% endfor %}
   </div>
-  <button type="submit" style="margin-top:8px;">Search by selected categories</button>
+  <button type="submit">Search Selected</button>
 </form>
 
-{% if q or checked_set %}
-<h3>Results ({{ count }})</h3>
-{% if products and products|length>0 %}
+{% if products %}
+<h3>Results ({{ products|length }})</h3>
 <ul>
   {% for p in products %}
     <li>
-      {% if p.images and p.images|length>0 %}
-        <img src="{{ url_for('static', filename=p.images[0]) }}" style="height:60px;vertical-align:middle;margin-right:8px;">
-      {% endif %}
-      <a href="{{ url_for('product_detail', product_id=p._id) }}">{{ p.title }}</a> - ${{ "%.2f"|format(p.price or 0) }}
+      {% if p.img0 %}<img src="{{ p.img0 }}" style="width:40px;height:40px;object-fit:cover;vertical-align:middle;margin-right:8px;">{% endif %}
+      <a href="{{ url_for('product_detail', product_id=p._id) }}">{{ p.title }}</a>
+      - ${{ "%.2f"|format(p.price or 0) }} — Stock: {{ p.stock or 0 }}
     </li>
   {% endfor %}
 </ul>
-{% else %}
-<p>No matching products.</p>
 {% endif %}
-{% endif %}
-
 {% endblock %}

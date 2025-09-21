@@ -6,9 +6,7 @@
   Parent:
   <select name="parentId">
     <option value="">-- as root --</option>
-    {% for n in nodes %}
-      <option value="{{ n._id }}">{{ n.path or n.name }}</option>
-    {% endfor %}
+    {% for n in nodes %}<option value="{{ n._id }}">{{ n.path }}</option>{% endfor %}
   </select>
   <button type="submit">Create</button>
 </form>

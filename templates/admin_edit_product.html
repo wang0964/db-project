@@ -2,41 +2,36 @@
 {% block content %}
 <h2>Edit Product</h2>
 <form method="post">
-  Title: <input type="text" name="title" value="{{ product.title }}" required><br>
-  Price: <input type="number" step="0.01" name="price" value="{{ product.price }}" required><br>
-  SKU: <input type="text" name="sku" value="{{ product.variants[0].sku if product.variants else '' }}" required><br>
-
-  Categories (multi-select): 
-  <div>
-    {% for c in categories %}
-      <label style="display:inline-block;min-width:260px;">
-        <input type="checkbox" name="categoryIds" value="{{ c._id }}" {% if product.categoryIds and (c._id in product.categoryIds) %}checked{% endif %}> {{ c.path or c.name }}
-      </label>
-    {% endfor %}
-  </div>
-
-  <button type="submit">Save Changes</button>
+  Title: <input type="text" name="title" value="{{ p.title }}" required><br>
+  Price: <input type="number" step="0.01" name="price" value="{{ p.price }}" required><br>
+  SKU: <input type="text" name="sku" value="{{ p.variants[0].sku if p.variants else '' }}" required><br>
+  <label><input type="checkbox" name="is_active" {% if p.status=='active' %}checked{% endif %}> Active</label><br>
+  Stock: <input type="number" name="stock" min="0" value="{{ p.stock or 0 }}"><br>
+  Categories (multi-select):<br>
+  {% set selected = p.categoryIds or [] %}
+  {% for c in categories %}
+    <label style="margin-right:16px;">
+      <input type="checkbox" name="categories" value="{{ c._id }}" {% if c._id in selected %}checked{% endif %}> {{ c.path }}
+    </label>
+  {% endfor %}
+  <br><button type="submit">Save Changes</button>
 </form>
 
 <h3>Images</h3>
-{% if product.images and product.images|length > 0 %}
-<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;">
-  {% for img in product.images %}
-  <div style="border:1px solid #eee;padding:6px;">
-    <img src="{{ url_for('static', filename=img) }}" alt="img" style="height:100px;display:block;margin-bottom:6px;">
-    <form action="{{ url_for('delete_product_image', product_id=product._id) }}" method="post" onsubmit="return confirm('Delete this image?');">
-      <input type="hidden" name="img" value="{{ img }}">
-      <button type="submit">Delete</button>
-    </form>
-  </div>
+<div>
+  {% for pair in img_pairs %}
+    <div style="display:inline-block;margin:6px;text-align:center;">
+      <img src="{{ pair.url }}" style="width:120px;height:120px;object-fit:cover;border:1px solid #ddd;border-radius:6px;display:block;">
+      <form method="post" action="{{ url_for('delete_image', product_id=p._id) }}">
+        <input type="hidden" name="img" value="{{ pair.id }}">
+        <button type="submit" onclick="return confirm('Delete this image?')">Delete</button>
+      </form>
+    </div>
   {% endfor %}
 </div>
-{% else %}
-<p>No images yet</p>
-{% endif %}
 
-<form action="{{ url_for('upload_product_images', product_id=product._id) }}" method="post" enctype="multipart/form-data">
-  <input type="file" name="images" multiple accept="image/*">
+<form method="post" action="{{ url_for('upload_images', product_id=p._id) }}" enctype="multipart/form-data">
+  <input type="file" name="images" multiple>
   <button type="submit">Upload Images</button>
 </form>
 {% endblock %}

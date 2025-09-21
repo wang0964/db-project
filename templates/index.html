@@ -3,20 +3,13 @@
 <h2>Products</h2>
 <ul>
   {% for p in products %}
-  <li>
-    {% if p.images and p.images|length>0 %}
-      <img src="{{ url_for('static', filename=p.images[0]) }}" style="height:60px;vertical-align:middle;margin-right:8px;">
-    {% endif %}
-    <a href="{{ url_for('product_detail', product_id=p._id) }}"><strong>{{ p.title }}</strong></a> - ${{ "%.2f"|format(p.price or 0) }}
-    {% if current_user.is_authenticated %}
-    <form action="{{ url_for('add_to_cart') }}" method="post" style="display:inline;">
-      <input type="hidden" name="productId" value="{{ p._id }}">
-      <input type="hidden" name="sku" value="{{ p.variants[0].sku if p.variants else 'default' }}">
-      <input type="number" name="qty" value="1" min="1" style="width:70px;">
-      <button type="submit">Add to Cart</button>
-    </form>
-    {% endif %}
-  </li>
+    <li>
+      {% if p.img0 %}
+        <img src="{{ p.img0 }}" style="width:48px;height:48px;object-fit:cover;vertical-align:middle;margin-right:8px;">
+      {% endif %}
+      <a href="{{ url_for('product_detail', product_id=p._id) }}">{{ p.title }}</a>
+      - ${{ "%.2f"|format(p.price or 0) }} — Stock: {{ p.stock or 0 }}
+    </li>
   {% endfor %}
 </ul>
 {% endblock %}

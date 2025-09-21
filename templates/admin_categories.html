@@ -2,17 +2,16 @@
 {% block content %}
 <h2>Admin - Categories</h2>
 <p><a href="{{ url_for('admin_category_add') }}">➕ Add Category (form)</a></p>
-<table border="1" cellpadding="6" cellspacing="0">
+<table border="1" cellpadding="6">
   <tr><th>Path</th><th>Parent</th><th>Actions</th></tr>
   {% for n in nodes %}
-  <tr>
-    <td>{{ n.path or n.name }}</td>
-    <td>{{ n.parentName }}</td>
-    <td>
-      <a href="{{ url_for('categories_edit', cat_id=n._id) }}">Edit</a> |
-      <a href="{{ url_for('categories_delete', cat_id=n._id) }}" onclick="return confirm('Delete this category and all descendants? Product references will also be removed.');">Delete</a>
-    </td>
-  </tr>
+    <tr>
+      <td>{{ n.path }}</td>
+      <td>{{ n.parentName }}</td>
+      <td>
+        <a href="{{ url_for('admin_category_delete', cat_id=n._id) }}" onclick="return confirm('Delete this category and all descendants? Product references will also be removed.')">Delete</a>
+      </td>
+    </tr>
   {% endfor %}
 </table>
 {% endblock %}

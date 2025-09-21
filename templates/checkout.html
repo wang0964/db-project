@@ -1,11 +1,26 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>Checkout</h2>
-{% if error %}
-<p style="color:red;">{{ error }}</p>
-{% elif order %}
-<p>Order placed! Order ID: {{ order }} Total: ${{ "%.2f"|format(total) }}</p>
+{% if order_id %}
+  <p>Order placed! Order ID: <code>{{ order_id }}</code></p>
+  <p>Total: <strong>${{ "%.2f"|format(total or 0) }}</strong></p>
 {% else %}
-<form method="post"><button type="submit">Place Order</button></form>
+  {% if not items %}
+    <p>No items.</p>
+  {% else %}
+    <table border="1" cellpadding="6">
+      <tr><th>Product</th><th>Qty</th><th>Unit</th><th>Subtotal</th></tr>
+      {% for it in items %}
+        <tr>
+          <td>{{ it.product.title }}</td>
+          <td>{{ it.qty }}</td>
+          <td>${{ "%.2f"|format(it.product.price or 0) }}</td>
+          <td>${{ "%.2f"|format((it.product.price or 0)*it.qty) }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+    <p><strong>Total:</strong> ${{ "%.2f"|format(total or 0) }}</p>
+    <form method="post"><button type="submit">Place Order</button></form>
+  {% endif %}
 {% endif %}
 {% endblock %}

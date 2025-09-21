@@ -4,11 +4,12 @@
 <p><a href="{{ url_for('admin_add_product') }}">➕ New Product</a></p>
 <ul>
   {% for p in products %}
-  <li>
-    {{ p.title }} - ${{ "%.2f"|format(p.price or 0) }}
-    <a href="{{ url_for('admin_edit_product', product_id=p._id) }}">✏ Edit</a>
-    <a href="{{ url_for('admin_delete_product', product_id=p._id) }}" onclick="return confirm('Are you sure to delete?')">❌ Delete</a>
-  </li>
+    <li>
+      {{ p.title }} - ${{ "%.2f"|format(p.price or 0) }}
+      <em style="color:#666;">[{{ p.status or "active" }} | stock: {{ p.stock or 0 }}]</em>
+      — <a href="{{ url_for('admin_edit_product', product_id=p._id) }}">Edit</a>
+      — <a href="{{ url_for('admin_delete_product', product_id=p._id) }}" onclick="return confirm('Delete?');">Delete</a>
+    </li>
   {% endfor %}
 </ul>
 {% endblock %}

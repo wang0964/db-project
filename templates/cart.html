@@ -1,15 +1,27 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>Cart</h2>
-{% set items = cart.get('items', []) %}
-{% if items|length > 0 %}
-<ul>
-  {% for it in items %}
-    <li>{{ it['sku'] }} - Qty: {{ it['qty'] }} - Unit Price: ${{ "%.2f"|format((it['priceSnapshot'] or 0)|float) }}</li>
-  {% endfor %}
-</ul>
-<a href="{{ url_for('checkout') }}">Proceed to Checkout</a>
+{% if not items %}
+  <p>Your cart is empty</p>
 {% else %}
-<p>Your cart is empty</p>
+<table border="1" cellpadding="6">
+  <tr><th>Product</th><th>Qty</th><th>Unit</th><th>Subtotal</th><th>Action</th></tr>
+  {% for it in items %}
+    <tr>
+      <td>{{ it.product.title }}</td>
+      <td>{{ it.qty }}</td>
+      <td>${{ "%.2f"|format(it.product.price or 0) }}</td>
+      <td>${{ "%.2f"|format((it.product.price or 0)*it.qty) }}</td>
+      <td>
+        <form method="post" action="{{ url_for('cart_item_remove') }}" style="display:inline" onsubmit="return confirm('Remove this item?');">
+          <input type="hidden" name="product_id" value="{{ it.product._id }}">
+          <button type="submit">Remove</button>
+        </form>
+      </td>
+    </tr>
+  {% endfor %}
+</table>
+<p><strong>Total:</strong> ${{ "%.2f"|format(total or 0) }}</p>
+<a href="{{ url_for('checkout') }}">Proceed to Checkout</a>
 {% endif %}
 {% endblock %}

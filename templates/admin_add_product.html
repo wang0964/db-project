@@ -5,17 +5,12 @@
   Title: <input type="text" name="title" required><br>
   Price: <input type="number" step="0.01" name="price" required><br>
   SKU: <input type="text" name="sku" required><br>
-
-  Categories (multi-select): 
-  <div>
-    {% for c in categories %}
-      <label style="display:inline-block;min-width:260px;">
-        <input type="checkbox" name="categoryIds" value="{{ c._id }}"> {{ c.path or c.name }}
-      </label>
-    {% endfor %}
-  </div>
-
-  <p style="color:#555;">Tip: After saving, you can upload multiple images on the Edit Product page.</p>
-  <button type="submit">Submit</button>
+  <label><input type="checkbox" name="is_active" checked> Active</label><br>
+  Stock: <input type="number" name="stock" min="0" value="0"><br>
+  Categories (multi-select):<br>
+  {% for c in categories %}
+    <label style="margin-right:16px;"><input type="checkbox" name="categories" value="{{ c._id }}"> {{ c.path }}</label>
+  {% endfor %}
+  <br><button type="submit">Submit</button>
 </form>
 {% endblock %}

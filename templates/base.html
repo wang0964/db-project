@@ -1,12 +1,11 @@
-<!DOCTYPE html>
-<html lang="zh">
+<!doctype html>
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>{{ title or "E-commerce" }}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <meta charset="utf-8">
+  <title>Mini E-commerce</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-<header>
   <h1>Mini E-commerce</h1>
   <nav>
     <a href="{{ url_for('index') }}">Home</a>
@@ -25,20 +24,15 @@
       <a href="{{ url_for('register') }}">Sign up</a>
     {% endif %}
   </nav>
-</header>
-
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    <ul class="flashlist">
-      {% for category, msg in messages %}
-        <li class="flash {{ category }}">{{ msg }}</li>
-      {% endfor %}
-    </ul>
-  {% endif %}
-{% endwith %}
-
-<main>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <ul class="flash">
+        {% for cat, msg in messages %}
+          <li class="{{ cat }}">{{ msg }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
   {% block content %}{% endblock %}
-</main>
 </body>
 </html>
