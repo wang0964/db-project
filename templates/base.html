@@ -2,25 +2,27 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8" />
-  <title>{{ title or "电商平台" }}</title>
+  <title>{{ title or "E-commerce" }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
 <body>
 <header>
-  <h1>简易电商平台</h1>
+  <h1>Mini E-commerce</h1>
   <nav>
-    <a href="{{ url_for('index') }}">首页</a>
-    <a href="{{ url_for('categories_home') }}">类别管理/检索</a>
+    <a href="{{ url_for('index') }}">Home</a>
     {% if current_user.is_authenticated %}
-      <a href="{{ url_for('cart') }}">购物车</a>
-      <a href="{{ url_for('checkout') }}">结算</a>
+      <a href="{{ url_for('categories_home') }}">Category Search</a>
+      <a href="{{ url_for('cart') }}">Cart</a>
+      <a href="{{ url_for('checkout') }}">Checkout</a>
       {% if current_user.isAdmin %}
-        <a href="{{ url_for('admin_products') }}">后台管理</a> <a href="{{ url_for('admin_categories') }}">类别管理</a>
+        <a href="{{ url_for('admin_products') }}">Admin</a>
+        <a href="{{ url_for('admin_categories') }}">Manage Categories</a>
+        <a href="{{ url_for('admin_invite') }}">Invite Code</a>
       {% endif %}
-      <a href="{{ url_for('logout') }}">退出 ({{ current_user.name }})</a>
+      <a href="{{ url_for('logout') }}">Sign out ({{ current_user.name }})</a>
     {% else %}
-      <a href="{{ url_for('login') }}">登录</a>
-      <a href="{{ url_for('register') }}">注册</a>
+      <a href="{{ url_for('login') }}">Sign in</a>
+      <a href="{{ url_for('register') }}">Sign up</a>
     {% endif %}
   </nav>
 </header>

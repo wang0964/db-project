@@ -1,9 +1,14 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>按类别检索的商品（{{ count }}）</h2>
+<h2>Products by Category({{ count }})</h2>
 <ul>
   {% for p in products %}
-    <li>{{ p.title }} - ￥{{ "%.2f"|format(p.price or 0) }}</li>
+    <li>
+      {% if p.images and p.images|length>0 %}
+        <img src="{{ url_for('static', filename=p.images[0]) }}" style="height:60px;vertical-align:middle;margin-right:8px;">
+      {% endif %}
+      <a href="{{ url_for('product_detail', product_id=p._id) }}">{{ p.title }}</a> - ${{ "%.2f"|format(p.price or 0) }}
+    </li>
   {% endfor %}
 </ul>
 {% endblock %}

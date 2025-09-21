@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>编辑类别</h2>
+<h2>Edit Category</h2>
 <form method="post">
-  名称：<input type="text" name="name" value="{{ cat.name }}" required>
-  <button type="submit">保存</button>
+  Name:<input type="text" name="name" value="{{ cat.name }}" required>
+  <button type="submit">Save</button>
 </form>
-<p>路径（只读）：{{ cat.path }}</p>
+<p>Path (read-only):{{ cat.path }}</p>
 {% endblock %}

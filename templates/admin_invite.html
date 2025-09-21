@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Admin • Invite Code</h2>
+
+<p>Invite code controls whether a new signup becomes an <strong>admin</strong>.
+If the provided invite matches the current code, the user will be created with admin privileges.</p>
+
+<form method="post" style="margin:12px 0;">
+  <label>Current code:</label>
+  <input type="text" value="{{ current_code }}" readonly style="width:260px;">
+  {% if current_code %}<em style="color:#666;margin-left:6px;">(readonly, set a new one below to change)</em>{% endif %}
+</form>
+
+<form method="post" style="margin:12px 0;">
+  <input type="hidden" name="action" value="save">
+  <label for="code">Set new code:</label>
+  <input id="code" name="code" type="text" required style="width:260px;">
+  <button type="submit">Save</button>
+</form>
+
+<form method="post" onsubmit="return confirm('Clear the invite code?');">
+  <input type="hidden" name="action" value="clear">
+  <button type="submit">Clear code</button>
+</form>
+{% endblock %}

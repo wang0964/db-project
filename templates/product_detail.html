@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>{{ p.title }}</h2>
+<p><a id="backLink" href="#" onclick="if(document.referrer){history.back();}else{window.location='{{ url_for('index') }}';} return false;">← Back</a></p>
+
+
+<style>
+.viewer {
+  position: relative;
+  width: fit-content;
+  margin-bottom: 10px;
+}
+.viewer img.main {
+  max-height: 360px;
+  display: block;
+  border-radius: 6px;
+}
+.viewer .navbtn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  border: none;
+  width: 36px;
+  height: 48px;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+.viewer .prev { left: 6px; }
+.viewer .next { right: 6px; }
+.thumbbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.thumbbar img {
+  height: 60px;
+  cursor: pointer;
+  opacity: 0.75;
+  border: 2px solid transparent;
+  border-radius: 4px;
+}
+.thumbbar img.active {
+  opacity: 1;
+  border-color: #333;
+}
+@media (max-width: 640px) {
+  .viewer .prev { left: 0; }
+  .viewer .next { right: 0; }
+}
+</style>
+
+<div class="detail-wrap" style="display:flex;gap:24px;align-items:flex-start;padding-left:40px;">
+  <div>
+    <div class="viewer">
+      {% set first_url = (url_for('static', filename=p.images[0]) if p.images and p.images|length>0 else None) %}
+      <button class="navbtn prev" type="button" onclick="showPrev()" title="Prev (←)">◀</button>
+      <img id="mainImg" class="main" src="{{ first_url or '' }}" alt="image">
+      <button class="navbtn next" type="button" onclick="showNext()" title="Next (→)">▶</button>
+    </div>
+
+    <div class="thumbbar" id="thumbbar">
+      {% for img in p.images %}
+        <img src="{{ url_for('static', filename=img) }}" data-index="{{ loop.index0 }}" onclick="showAt({{ loop.index0 }})" class="{% if loop.first %}active{% endif %}">
+      {% endfor %}
+    </div>
+  </div>
+
+  <div>
+    <p>Price: <strong>${{ "%.2f"|format(p.price or 0) }}</strong></p>
+    {% if categories and categories|length>0 %}
+      <p>Categories: {{ ", ".join(categories) }}</p>
+    {% endif %}
+    {% if current_user.is_authenticated %}
+<form action="{{ url_for('add_to_cart') }}" method="post" style="margin-top:10px;">
+      <input type="hidden" name="productId" value="{{ p._id }}">
+      <input type="hidden" name="sku" value="{{ p.variants[0].sku if p.variants else 'default' }}">
+      Qty: <input type="number" name="qty" value="1" min="1" style="width:70px;">
+      <button type="submit">Add to Cart</button>
+    </form>
+{% else %}
+<p id="signinHint" style="margin-top:10px;"><a href="{{ url_for('login') }}?next={{ request.full_path|urlencode }}">Please sign in to add to cart</a></p>
+{% endif %}
+    {% if not p.images or p.images|length == 0 %}
+      <p style="color:#888;margin-top:8px;">No images uploaded for this product.</p>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+(function(){
+  const imgs = [{% for img in p.images %}"{{ url_for('static', filename=img) }}"{% if not loop.last %},{% endif %}{% endfor %}];
+  let idx = 0;
+  const mainImg = document.getElementById('mainImg');
+  const thumbs = Array.from(document.querySelectorAll('#thumbbar img'));
+
+  function sync() {
+    if (!imgs.length) return;
+    idx = (idx + imgs.length) % imgs.length;
+    mainImg.src = imgs[idx];
+    thumbs.forEach((t, i) => {
+      if (i === idx) t.classList.add('active'); else t.classList.remove('active');
+    });
+  }
+
+  window.showPrev = function(){ if (!imgs.length) return; idx = (idx - 1 + imgs.length) % imgs.length; sync(); }
+  window.showNext = function(){ if (!imgs.length) return; idx = (idx + 1) % imgs.length; sync(); }
+  window.showAt = function(i){ if (!imgs.length) return; idx = i; sync(); }
+
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowLeft') { showPrev(); }
+    else if (e.key === 'ArrowRight') { showNext(); }
+  });
+
+  // Initialize if there are images
+  if (imgs.length) {
+    idx = 0;
+    sync();
+  }
+})();
+</script>
+{% endblock %}

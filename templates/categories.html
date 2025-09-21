@@ -1,56 +1,42 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>类别管理 / 检索</h2>
+<h2>Search by Category</h2>
 
-<h3>新增类别</h3>
-<form method="post" action="{{ url_for('categories_add') }}">
-  名称：<input type="text" name="name" required>
-  父类别：
-  <select name="parentId">
-    <option value="">-- 作为根 --</option>
-    {% for n in nodes %}
-      <option value="{{ n._id }}">{{ n.path or n.name }}</option>
-    {% endfor %}
-  </select>
-  <button type="submit">添加</button>
+<form method="get" action="{{ url_for('categories_home') }}" style="margin-bottom:12px;">
+  Keyword (fuzzy match name or path):
+  <input type="text" name="q" value="{{ q or '' }}" placeholder="e.g.: Food, Phone, Sea">
+  <button type="submit">Search</button>
 </form>
 
-<hr>
-<h3>现有树（categories_tree）</h3>
-{% if trees|length == 0 %}
-<p>暂无根类目。</p>
-{% endif %}
+<form method="get" action="{{ url_for('categories_home') }}" style="margin-bottom:16px;">
+  <div style="max-height:220px;overflow:auto;border:1px solid #ddd;padding:8px;">
+    {% for n in nodes %}
+      <label style="display:inline-block;min-width:260px;margin:3px 10px 3px 0;">
+        <input type="checkbox" name="categoryIds" value="{{ n._id }}"
+               {% if checked_set and (str(n._id) in checked_set) %}checked{% endif %}>
+        {{ n.path or n.name }}
+      </label>
+    {% endfor %}
+  </div>
+  <button type="submit" style="margin-top:8px;">Search by selected categories</button>
+</form>
+
+{% if q or checked_set %}
+<h3>Results ({{ count }})</h3>
+{% if products and products|length>0 %}
 <ul>
-  {% macro render_nodes(nodes) -%}
-    <ul>
-      {% for x in nodes %}
-        <li>
-          {{ x.name }}
-          {% if x.subcategories and x.subcategories|length > 0 %}
-            {{ render_nodes(x.subcategories) }}
-          {% endif %}
-        </li>
-      {% endfor %}
-    </ul>
-  {%- endmacro %}
-  {% for root in trees %}
+  {% for p in products %}
     <li>
-      <strong>{{ root.name }}</strong>
-      {% if root.subcategories %}
-        {{ render_nodes(root.subcategories) }}
+      {% if p.images and p.images|length>0 %}
+        <img src="{{ url_for('static', filename=p.images[0]) }}" style="height:60px;vertical-align:middle;margin-right:8px;">
       {% endif %}
+      <a href="{{ url_for('product_detail', product_id=p._id) }}">{{ p.title }}</a> - ${{ "%.2f"|format(p.price or 0) }}
     </li>
   {% endfor %}
 </ul>
+{% else %}
+<p>No matching products.</p>
+{% endif %}
+{% endif %}
 
-<hr>
-<h3>所有类别（邻接表）</h3>
-<ul>
-{% for n in nodes %}
-  <li>
-    {{ n.path or n.name }}
-    — <a href="{{ url_for('products_by_category', cat_id=n._id) }}">查看该类目及子类商品</a>
-  </li>
-{% endfor %}
-</ul>
 {% endblock %}
