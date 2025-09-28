@@ -27,6 +27,9 @@ fs = GridFS(db)
 # --- create important index (idempotent) ---
 try:
     db.carts.create_index([("userId", 1), ("product_id", 1)], unique=True)
+    db.categories.create_index([("path", 1)])                   # /admin/categories* 用到 sort("path", 1)
+    db.products.create_index([("status", 1), ("createdAt", -1)])# 首页/后台常用查询
+    db.products.create_index([("createdAt", -1)])               # 首页 sort("createdAt", -1)
 except Exception:
     pass
 
