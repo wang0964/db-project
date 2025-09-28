@@ -594,6 +594,21 @@ def admin_invite():
     return render_template("admin_invite.html", current_code=doc.get("value", ""))
 
 
+@app.route("/health")
+def health():
+    return "OK", 200
+
+@app.route("/pingdb")
+def ping_db():
+    try:
+        client.admin.command("ping")
+        return {"ok": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}, 500
+
+
+
+
 # if __name__ == "__main__":
 #     app.run(debug=True)
 
