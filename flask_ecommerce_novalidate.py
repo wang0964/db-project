@@ -593,5 +593,11 @@ def admin_invite():
     return render_template("admin_invite.html", current_code=doc.get("value", ""))
 
 
+# if __name__ == "__main__":
+#     app.run(debug=True)
+
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    import os
+    port = int(os.environ.get("PORT", 8080))  
+    app.run(host="0.0.0.0", port=port, debug=True)
