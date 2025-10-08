@@ -8,11 +8,19 @@
   <label><input type="checkbox" name="is_active" {% if p.status=='active' %}checked{% endif %}> Active</label><br>
   Stock: <input type="number" name="stock" min="0" value="{{ p.stock or 0 }}"><br>
   Categories (multi-select):<br>
-  {% set selected = p.categoryIds or [] %}
+  {% set selected = (p.categoryIds or []) | map('string') | list %}
   {% for c in categories %}
-    <label style="margin-right:16px;">
-      <input type="checkbox" name="categories" value="{{ c._id }}" {% if c._id in selected %}checked{% endif %}> {{ c.path }}
-    </label>
+  <label style="margin-right: 16px"
+    ><input
+      type="checkbox"
+      name="categories"
+      class="cat"
+      value="{{ c._id|string }}"                      
+      data-parent="{{ (c.parentId|string) if c.parentId else '' }}"
+      {% if (c._id|string) in selected %}checked{% endif %}
+    />
+    {{ c.path }}</label
+  >
   {% endfor %}
   <br><button type="submit">Save Changes</button>
 </form>
@@ -34,4 +42,57 @@
   <input type="file" name="images" multiple>
   <button type="submit">Upload Images</button>
 </form>
+
+
+<script>
+  (function () {
+    const boxes = [...document.querySelectorAll('input.cat')];
+
+
+    const byId = Object.create(null);
+    const childrenOf = Object.create(null);
+    for (const b of boxes) {
+      const id = b.value;                   
+      const p  = (b.dataset.parent || '').trim();  
+      byId[id] = b;
+      if (!childrenOf[p]) childrenOf[p] = [];
+      childrenOf[p].push(id);               
+    }
+
+
+    function checkAncestors(b) {
+      for (let p = (b.dataset.parent || '').trim(); p && byId[p]; p = (byId[p].dataset.parent || '').trim()) {
+        const par = byId[p];
+        if (!par.checked) par.checked = true;
+      }
+    }
+
+
+    function uncheckDescendants(id) {
+      const children = childrenOf[id] || [];
+      for (const cid of children) {
+        const ch = byId[cid];
+        if (ch.checked) ch.checked = false;
+        uncheckDescendants(cid);   // 递归
+      }
+    }
+
+
+    boxes.forEach(b => {
+      b.addEventListener('change', () => {
+        if (b.checked) {
+          checkAncestors(b);            
+        } else {
+          uncheckDescendants(b.value);  
+        }
+      });
+    });
+
+
+    boxes.filter(b => b.checked).forEach(checkAncestors);
+  })();
+</script>
+
+
+
 {% endblock %}

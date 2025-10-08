@@ -1,16 +1,75 @@
-{% extends "base.html" %}
-{% block content %}
+{% extends "base.html" %} {% block content %}
 <h2>New Product</h2>
 <form method="post">
-  Title: <input type="text" name="title" required><br>
-  Price: <input type="number" step="0.01" name="price" required><br>
-  SKU: <input type="text" name="sku" required><br>
-  <label><input type="checkbox" name="is_active" checked> Active</label><br>
-  Stock: <input type="number" name="stock" min="0" value="0"><br>
-  Categories (multi-select):<br>
+  Title: <input type="text" name="title" required /><br />
+  Price: <input type="number" step="0.01" name="price" required /><br />
+  SKU: <input type="text" name="sku" required /><br />
+  <label><input type="checkbox" name="is_active" checked /> Active</label><br />
+  Stock: <input type="number" name="stock" min="0" value="0" /><br />
+  Categories (multi-select):<br />
   {% for c in categories %}
-    <label style="margin-right:16px;"><input type="checkbox" name="categories" value="{{ c._id }}"> {{ c.path }}</label>
+  <label style="margin-right: 16px"
+    ><input
+      type="checkbox"
+      name="categories"
+      class="cat"
+      value="{{ c._id|string }}"                      
+      data-parent="{{ (c.parentId|string) if c.parentId else '' }}"
+      {% if (c._id|string) in selected %}checked{% endif %}
+    />
+    {{ c.path }}</label
+  >
   {% endfor %}
-  <br><button type="submit">Submit</button>
+  <br /><button type="submit">Submit</button>
 </form>
+
+<script>
+  (function () {
+    const boxes = [...document.querySelectorAll('input.cat')];
+
+
+    const byId = Object.create(null);
+    const childrenOf = Object.create(null);
+    for (const b of boxes) {
+      const id = b.value;                   
+      const p  = (b.dataset.parent || '').trim();  
+      byId[id] = b;
+      if (!childrenOf[p]) childrenOf[p] = [];
+      childrenOf[p].push(id);               
+    }
+
+
+    function checkAncestors(b) {
+      for (let p = (b.dataset.parent || '').trim(); p && byId[p]; p = (byId[p].dataset.parent || '').trim()) {
+        const par = byId[p];
+        if (!par.checked) par.checked = true;
+      }
+    }
+
+
+    function uncheckDescendants(id) {
+      const children = childrenOf[id] || [];
+      for (const cid of children) {
+        const ch = byId[cid];
+        if (ch.checked) ch.checked = false;
+        uncheckDescendants(cid);   // 递归
+      }
+    }
+
+
+    boxes.forEach(b => {
+      b.addEventListener('change', () => {
+        if (b.checked) {
+          checkAncestors(b);            
+        } else {
+          uncheckDescendants(b.value);  
+        }
+      });
+    });
+
+
+    boxes.filter(b => b.checked).forEach(checkAncestors);
+  })();
+</script>
+
 {% endblock %}
