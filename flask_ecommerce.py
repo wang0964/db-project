@@ -145,6 +145,7 @@ def register():
     if request.method == "POST":
         email = request.form["email"].strip().lower()
         name = request.form["name"].strip()
+        password = request.form["password"]
         invite = (request.form.get("invite") or "").strip()
 
         if db.users.find_one({"email": email}):
@@ -163,6 +164,7 @@ def register():
             {
                 "email": email,
                 "name": name,
+                "password": password,
                 "isAdmin": is_admin,
                 "createdAt": datetime.utcnow(),
                 "addresses": [],
@@ -177,10 +179,18 @@ def register():
 def login():
     if request.method == "POST":
         email = request.form["email"].strip().lower()
-        u = db.users.find_one({"email": email})
+        psw = request.form["password"].strip().lower()
+        u = db.users.find_one({"email": email},{"password": 1, "_id": 1,"email":1})
+        psw1 = u.get("password","")
+
+        print(f'{psw}   {psw1}')
         if not u:
             flash("User does not exist", "error")
             return redirect(url_for("login"))
+        if psw!=psw1:
+            flash("Password does not match", "error")
+            return redirect(url_for("login"))
+
         login_user(User(u))
         next_url = request.args.get("next")
         return redirect(next_url or url_for("index"))
