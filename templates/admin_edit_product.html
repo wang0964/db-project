@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>Edit Product</h2>
+<p><a id="backLink" href="#" onclick="if(document.referrer){history.back();}else{window.location='{{ url_for('admin_products') }}';} return false;">← Back</a></p>
 <form method="post">
   Title: <input type="text" name="title" value="{{ p.title }}" required><br>
   Price: <input type="number" step="0.01" name="price" value="{{ p.price }}" required><br>
