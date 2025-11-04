@@ -20,6 +20,11 @@
     <p>Price: <strong>${{ "%.2f"|format(p.price or 0) }}</strong></p>
     <p>Categories: {{ categories|join(", ") }}</p>
     <p>Stock: <strong>{{ p.stock or 0 }}</strong></p>
+
+    {% for k, v in extra_attrs.items() %}
+      <p>{{ k }}: {{ v }}</p>
+    {% endfor %}
+
     {% if current_user.is_authenticated %}
     <form action="{{ url_for('add_to_cart') }}" method="post" style="margin-top:10px;">
       <input type="hidden" name="product_id" value="{{ p._id }}">

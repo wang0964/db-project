@@ -4,9 +4,23 @@
 <form method="post">
   Title: <input type="text" name="title" value="{{ p.title }}" required><br>
   Price: <input type="number" step="0.01" name="price" value="{{ p.price }}" required><br>
-  SKU: <input type="text" name="sku" value="{{ p.variants[0].sku if p.variants else '' }}" required><br>
+  SKU: <input type="text" name="sku" value="{{ p.variants }}" required><br>
   <label><input type="checkbox" name="is_active" {% if p.status=='active' %}checked{% endif %}> Active</label><br>
   Stock: <input type="number" name="stock" min="0" value="{{ p.stock or 0 }}"><br>
+
+<!-- --- Attributes Editor (start) --- -->
+  <div id="attr-editor" style="margin:10px 0 16px">
+    <div style="font-weight:600; margin-bottom:6px">
+      Add New Attributes
+    </div>
+
+    <div id="attrs-list"></div>
+
+    <button type="button" id="add-attr">+ Add attribute</button>
+    <small style="display:block; color:#666; margin-top:6px">  </small>
+  </div>
+  <!-- --- Attributes Editor (end) --- -->
+
   Categories (multi-select):<br>
   {% set selected = (p.categoryIds or []) | map('string') | list %}
   {% for c in categories %}
@@ -91,7 +105,52 @@
 
     boxes.filter(b => b.checked).forEach(checkAncestors);
   })();
+
 </script>
+
+
+
+
+
+<script type="application/json" id="extra-attrs-data">
+  {{ extra_attrs | default({}, true) | tojson | safe }}
+</script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const list = document.getElementById('attrs-list');
+    const addBtn = document.getElementById('add-attr');
+
+    function addAttrRow(key = '', val = '') {
+      const row = document.createElement('div');
+      row.className = 'attr-row';
+      row.style.margin = '4px 0';
+      row.style.display = 'flex';
+      row.style.gap = '8px';
+      row.innerHTML = `
+        <input type="text" name="attr_name[]" placeholder="Key (e.g. attributes.color)"
+               style="width:240px" value="${(key ?? '').toString().replaceAll('"','&quot;')}">
+        <input type="text" name="attr_value[]" placeholder='Value (e.g. "red" or 19.99)'
+               style="width:240px" value="${(val ?? '').toString().replaceAll('"','&quot;')}">
+        <button type="button" class="rm" title="Remove">×</button>
+      `;
+      row.querySelector('.rm').addEventListener('click', () => row.remove());
+      list.appendChild(row);
+    }
+
+    addBtn?.addEventListener('click', () => addAttrRow());
+
+    const prefill = JSON.parse(document.getElementById('extra-attrs-data').textContent || '{}');
+    const entries = Object.entries(prefill);
+    if (entries.length) {
+      entries.forEach(([k, v]) => addAttrRow(k, v));
+    } else {
+      addAttrRow();
+    }
+  });
+</script>
+
+
+
 
 
 

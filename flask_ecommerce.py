@@ -40,6 +40,9 @@ login_manager.login_message = "Please sign in to continue."
 login_manager.login_message_category = "error"
 
 
+PREFIX_EXTRA='_##_'  # e.g.  color -> _##_color
+
+
 class User(UserMixin):
     def __init__(self, doc):
         self.id = str(doc["_id"])
@@ -237,9 +240,16 @@ def product_detail(product_id):
         flash("Invalid product ID", "error")
         return redirect(url_for("index"))
     p = db.products.find_one({"_id": pid})
+
     if not p:
         flash("Product not found", "error")
         return redirect(url_for("index"))
+
+    old_extra={}
+    for key in p:
+        if not key.startswith(PREFIX_EXTRA):
+            continue
+        old_extra[key]=''
 
     img_ids = [str(x) for x in (p.get("imageIds") or [])]
     imgs = [url_for("image_file", file_id=i) for i in img_ids]
@@ -253,7 +263,15 @@ def product_detail(product_id):
             cat_names.append(c["path"])
 
     p["_id"] = str(p["_id"])
-    return render_template("product_detail.html", p=p, categories=cat_names, imgs=imgs)
+
+    extra_attrs={}
+    
+    for key in old_extra.keys():
+        real_key=key[len(PREFIX_EXTRA):]
+        value=p[key]
+        extra_attrs[real_key]=value
+
+    return render_template("product_detail.html", p=p, categories=cat_names, imgs=imgs, extra_attrs=extra_attrs)
 
 
 # --------------- cart & checkout ---------------
@@ -419,6 +437,13 @@ def admin_products():
 def admin_add_product():
     cats = list(db.categories.find({}).sort("path", 1))
     if request.method == "POST":
+
+        new_keys=request.form.getlist("attr_name[]")
+        new_values=request.form.getlist("attr_value[]")
+
+        print(new_keys)
+        print(new_values)
+
         title = request.form["title"].strip()
         price = float(request.form["price"])
         sku = request.form["sku"].strip()
@@ -426,19 +451,31 @@ def admin_add_product():
         stock = int(request.form.get("stock", 0) or 0)
         selected = [oid(x) for x in request.form.getlist("categories")]
         selected = [x for x in selected if x]
-        new_id = db.products.insert_one(
-            {
+
+        extra_attr={}
+        for i in range(len(new_keys)):
+            if len(new_keys[i].strip())==0:
+                continue
+            key=PREFIX_EXTRA + new_keys[i]
+            value=new_values[i]
+            extra_attr.setdefault(key,value)
+
+
+        fixed_dict={
                 "title": title,
                 "price": price,
-                "variants": [{"sku": sku}],
+                "variants": sku,
                 "categoryIds": selected,
                 "imageIds": [],
                 "images": [],  # legacy
                 "createdAt": datetime.utcnow(),
                 "status": status,
                 "stock": stock,
-            }
-        ).inserted_id
+        }
+        final_dict=fixed_dict | extra_attr
+        # print(final_dict)
+
+        new_id = db.products.insert_one(final_dict).inserted_id
         flash("Product created", "success")
         return redirect(url_for("admin_edit_product", product_id=str(new_id)))
     return render_template("admin_add_product.html", categories=cats)
@@ -450,9 +487,17 @@ def admin_add_product():
 def admin_edit_product(product_id):
     pid = oid(product_id)
     p = db.products.find_one({"_id": pid})
+
     if not p:
         flash("Product not found", "error")
         return redirect(url_for("admin_products"))
+
+    old_extra={}
+    for key in p:
+        if not key.startswith(PREFIX_EXTRA):
+            continue
+        old_extra[key]=''
+
     cats = list(db.categories.find({}).sort("path", 1))
     if request.method == "POST":
         title = request.form["title"].strip()
@@ -462,25 +507,53 @@ def admin_edit_product(product_id):
         stock = int(request.form.get("stock", 0) or 0)
         selected = [oid(x) for x in request.form.getlist("categories")]
         selected = [x for x in selected if x]
+
+        if old_extra:
+            db.products.update_one(
+                {"_id": pid},
+                {"$unset": old_extra}
+            )
+
+
+        new_keys=request.form.getlist("attr_name[]")
+        new_values=request.form.getlist("attr_value[]")
+        extra_attr={}
+        for i in range(len(new_keys)):
+            if len(new_keys[i].strip())==0:
+                continue
+            key=PREFIX_EXTRA + new_keys[i]
+            value=new_values[i]
+            extra_attr[key]=value
+
         db.products.update_one(
             {"_id": pid},
             {
                 "$set": {
                     "title": title,
                     "price": price,
-                    "variants": [{"sku": sku}],
+                    "variants": sku,
                     "categoryIds": selected,
                     "status": status,
                     "stock": stock,
-                }
+                } | extra_attr
             },
         )
+
         flash("Product updated", "success")
         return redirect(url_for("admin_edit_product", product_id=product_id))
 
+
+    extra_attrs={}
+    
+    for key in old_extra.keys():
+        real_key=key[len(PREFIX_EXTRA):]
+        value=p[key]
+        extra_attrs[real_key]=value
+
     img_ids = [str(x) for x in (p.get("imageIds") or [])]
     img_pairs = [{"id": i, "url": url_for("image_file", file_id=i)} for i in img_ids]
-    return render_template("admin_edit_product.html", p=p, categories=cats, img_pairs=img_pairs)
+    print(extra_attrs)
+    return render_template("admin_edit_product.html", p=p, categories=cats, img_pairs=img_pairs,extra_attrs=extra_attrs)
 
 
 @app.route("/admin/products/delete/<product_id>")

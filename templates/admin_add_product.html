@@ -6,6 +6,23 @@
   SKU: <input type="text" name="sku" required /><br />
   <label><input type="checkbox" name="is_active" checked /> Active</label><br />
   Stock: <input type="number" name="stock" min="0" value="0" /><br />
+
+
+<!-- --- Attributes Editor (start) --- -->
+  <div id="attr-editor" style="margin:10px 0 16px">
+    <div style="font-weight:600; margin-bottom:6px">
+      Add New Attributes
+    </div>
+
+    <div id="attrs-list"></div>
+
+    <button type="button" id="add-attr">+ Add attribute</button>
+    <small style="display:block; color:#666; margin-top:6px">  </small>
+  </div>
+  <!-- --- Attributes Editor (end) --- -->
+
+
+
   Categories (multi-select):<br />
   {% for c in categories %}
   <label style="margin-right: 16px"
@@ -70,6 +87,37 @@
 
     boxes.filter(b => b.checked).forEach(checkAncestors);
   })();
+
+
+
+document.addEventListener('DOMContentLoaded', () => {
+  const list = document.getElementById('attrs-list');
+  const addBtn = document.getElementById('add-attr');
+
+  function addAttrRow(key = '', val = '') {
+    const row = document.createElement('div');
+    row.className = 'attr-row';
+    row.style.margin = '4px 0';
+    row.style.display = 'flex';
+    row.style.gap = '8px';
+
+    row.innerHTML = `
+      <input type="text" name="attr_name[]" placeholder="Key (e.g. Color)" 
+             style="width:240px" value="${key}">
+      <input type="text" name="attr_value[]" placeholder='Value (e.g. "red" )' 
+             style="width:240px" value="${val}">
+    `;
+    list.appendChild(row);
+  }
+
+  addBtn?.addEventListener('click', () => addAttrRow());
+
+
+  addAttrRow();
+});
+
+
+
 </script>
 
 {% endblock %}
