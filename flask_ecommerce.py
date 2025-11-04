@@ -262,10 +262,11 @@ def product_detail(product_id):
 
     extra_attrs={}
     if old_extra:
-        for key in old_extra.keys():
+        # for key in old_extra.keys():
 
-            value=old_extra[key]
-            extra_attrs[key]=value
+        #     value=old_extra[key]
+        #     extra_attrs[key]=value
+        extra_attrs=old_extra.copy()
 
     return render_template("product_detail.html", p=p, categories=cat_names, imgs=imgs, extra_attrs=extra_attrs)
 
@@ -455,7 +456,7 @@ def admin_add_product():
             # key=PREFIX_EXTRA + new_keys[i]
             key=new_keys[i]
             value=new_values[i]
-            extra_attr.setdefault(key,value)
+            extra_attr[key]=value
 
 
         fixed_dict={
@@ -551,9 +552,10 @@ def admin_edit_product(product_id):
     extra_attrs={}
     
     if old_extra:
-        for key in old_extra.keys():
-            value=old_extra[key]
-            extra_attrs[key]=value
+        # for key in old_extra.keys():
+        #     value=old_extra[key]
+        #     extra_attrs[key]=value
+        extra_attrs=old_extra.copy()
 
     img_ids = [str(x) for x in (p.get("imageIds") or [])]
     img_pairs = [{"id": i, "url": url_for("image_file", file_id=i)} for i in img_ids]
