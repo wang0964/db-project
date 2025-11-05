@@ -170,7 +170,7 @@ def register():
                 "password": password,
                 "isAdmin": is_admin,
                 "createdAt": datetime.utcnow(),
-                "addresses": [],
+                # "addresses": [],
             }
         )
         flash("Registered successfully. Please sign in.", "success")
