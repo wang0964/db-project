@@ -30,8 +30,8 @@ try:
     db.categories.create_index([("path", ASCENDING)])                   
     # db.products.create_index([("status", ASCENDING), ("createdAt", DESCENDING)])
     db.products.create_index([("createdAt", DESCENDING)])     
-    db.products.create_index([("title", TEXT)])
-    db.products.create_index([("sku", TEXT)])
+    db.products.create_index([("title", TEXT)]) 
+    db.products.create_index([("sku", ASCENDING)])
     db.products.create_index([("categoryIds", ASCENDING), ("title", TEXT)])
     db.products.create_index([("categoryIds", ASCENDING)])
     
