@@ -7,7 +7,7 @@ from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, flash, Response
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from bson import ObjectId
-from pymongo import MongoClient
+from pymongo import MongoClient,ASCENDING, DESCENDING, TEXT
 from gridfs import GridFS
 from dotenv import load_dotenv
 
@@ -26,10 +26,15 @@ fs = GridFS(db)
 
 # --- create important index (idempotent) ---
 try:
-    db.carts.create_index([("userId", 1), ("product_id", 1)], unique=True)
-    db.categories.create_index([("path", 1)])                   # /admin/categories* 用到 sort("path", 1)
-    db.products.create_index([("status", 1), ("createdAt", -1)])# 首页/后台常用查询
-    db.products.create_index([("createdAt", -1)])               # 首页 sort("createdAt", -1)
+    db.carts.create_index([("userId", ASCENDING), ("product_id", ASCENDING)], unique=True)
+    db.categories.create_index([("path", ASCENDING)])                   
+    # db.products.create_index([("status", ASCENDING), ("createdAt", DESCENDING)])
+    db.products.create_index([("createdAt", DESCENDING)])     
+    db.products.create_index([("title", TEXT)])
+    db.products.create_index([("sku", TEXT)])
+    db.products.create_index([("categoryIds", ASCENDING), ("title", TEXT)])
+    db.products.create_index([("categoryIds", ASCENDING)])
+    
 except Exception:
     pass
 
